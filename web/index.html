@@ -1,0 +1,550 @@
+<title>Trikon</title>
+<style>
+  /* ---- Tokens. Light is the base; dark is a selected set, not an inversion. ------ */
+  :root {
+    color-scheme: light;
+    --plane:          #f9f9f7;
+    --surface:        #fcfcfb;
+    --ink:            #0b0b0b;
+    --ink-2:          #52514e;
+    --ink-muted:      #898781;
+    --grid:           #e1e0d9;
+    --axis:           #c3c2b7;
+    --border:         rgba(11, 11, 11, 0.10);
+    --series:         #2a78d6;
+    --series-soft:    rgba(42, 120, 214, 0.13);
+    --deemph:         #c3c2b7;
+    --good:           #0ca30c;
+    --good-text:      #006300;
+    --warning:        #fab219;
+    --serious:        #ec835a;
+    --critical:       #d03b3b;
+    --radius:         10px;
+    --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --plane:       #0d0d0d;
+      --surface:     #1a1a19;
+      --ink:         #ffffff;
+      --ink-2:       #c3c2b7;
+      --ink-muted:   #898781;
+      --grid:        #2c2c2a;
+      --axis:        #383835;
+      --border:      rgba(255, 255, 255, 0.10);
+      --series:      #3987e5;
+      --series-soft: rgba(57, 135, 229, 0.18);
+      --deemph:      #383835;
+      --good-text:   #0ca30c;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --plane:       #0d0d0d;
+    --surface:     #1a1a19;
+    --ink:         #ffffff;
+    --ink-2:       #c3c2b7;
+    --ink-muted:   #898781;
+    --grid:        #2c2c2a;
+    --axis:        #383835;
+    --border:      rgba(255, 255, 255, 0.10);
+    --series:      #3987e5;
+    --series-soft: rgba(57, 135, 229, 0.18);
+    --deemph:      #383835;
+    --good-text:   #0ca30c;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: var(--font);
+    background: var(--plane);
+    color: var(--ink);
+    font-size: 14px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 28px 22px 72px; }
+
+  /* ---- Header ------------------------------------------------------------------- */
+  header { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; margin-bottom: 4px; }
+  h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+  .sub { color: var(--ink-2); font-size: 13px; }
+  .sub code { background: var(--series-soft); padding: 1px 5px; border-radius: 4px; font-size: 12px; }
+
+  /* ---- Controls: one row above the charts --------------------------------------- */
+  .controls {
+    display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px 16px; margin: 18px 0 22px;
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); font-weight: 600; }
+  .field input, .field select {
+    font: inherit; font-size: 13px; padding: 6px 9px; border-radius: 7px;
+    border: 1px solid var(--border); background: var(--plane); color: var(--ink); min-width: 88px;
+  }
+  .check { display: flex; align-items: center; gap: 7px; font-size: 13px; color: var(--ink-2); padding-bottom: 7px; }
+  button {
+    font: inherit; font-size: 13px; font-weight: 600; padding: 7px 16px; border-radius: 7px;
+    border: 1px solid transparent; background: var(--series); color: #fff; cursor: pointer;
+  }
+  button:hover { filter: brightness(1.07); }
+  button:disabled { opacity: 0.55; cursor: progress; }
+  button.ghost { background: transparent; color: var(--ink-2); border-color: var(--border); }
+
+  /* ---- Tabs -------------------------------------------------------------------- */
+  nav { display: flex; gap: 2px; border-bottom: 1px solid var(--border); margin-bottom: 22px; overflow-x: auto; }
+  nav button {
+    background: none; color: var(--ink-muted); border: none; border-bottom: 2px solid transparent;
+    border-radius: 0; padding: 9px 13px; font-weight: 500; white-space: nowrap;
+  }
+  nav button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--series); }
+  nav button:hover { color: var(--ink); }
+  section[hidden] { display: none; }
+
+  /* ---- Cards & KPI tiles ------------------------------------------------------- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 18px;
+  }
+  .card h2 { font-size: 13px; font-weight: 600; margin: 0 0 3px; letter-spacing: -0.005em; }
+  .card .note { font-size: 12px; color: var(--ink-muted); margin: 0 0 16px; max-width: 68ch; }
+
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 12px; margin-bottom: 18px; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+  .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); font-weight: 600; }
+  .tile .v { font-size: 26px; font-weight: 600; margin-top: 5px; letter-spacing: -0.02em; }
+  .tile .d { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+  .tile.hero .v { font-size: 44px; line-height: 1.05; }
+  .tile.hero .d { color: var(--good-text); font-weight: 600; }
+
+  /* ---- Tables ------------------------------------------------------------------ */
+  .scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 11px 7px 0; border-bottom: 1px solid var(--grid); }
+  th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-muted); font-weight: 600; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover { background: var(--series-soft); }
+  code, .mono { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+
+  /* ---- Status chips: colour never carries meaning alone ------------------------ */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 600;
+    padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); white-space: nowrap;
+  }
+  .chip .dot { width: 7px; height: 7px; border-radius: 50%; flex: none; }
+  .chip.critical .dot { background: var(--critical); }
+  .chip.high     .dot { background: var(--serious); }
+  .chip.medium   .dot { background: var(--warning); }
+  .chip.low      .dot { background: var(--good); }
+
+  /* ---- Bars: one hue, length carries magnitude --------------------------------- */
+  .barrow { display: grid; grid-template-columns: 190px 1fr 108px; gap: 12px; align-items: center; margin-bottom: 7px; }
+  .barrow .lbl { font-size: 12px; color: var(--ink-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .track { background: var(--grid); border-radius: 4px; height: 15px; position: relative; }
+  .fill { background: var(--series); height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
+  .barrow .val { font-size: 12px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+
+  .evidence { list-style: none; padding: 0; margin: 8px 0 0; }
+  .evidence li { display: flex; gap: 8px; padding: 4px 0; font-size: 12px; color: var(--ink-2); }
+  .evidence .mark { font-weight: 700; flex: none; width: 12px; }
+  .evidence .yes { color: var(--good-text); }
+  .evidence .no  { color: var(--critical); }
+
+  details { border-top: 1px solid var(--grid); padding: 10px 0; }
+  details:first-of-type { border-top: none; }
+  summary { cursor: pointer; display: grid; grid-template-columns: 96px 1fr 130px; gap: 12px; align-items: center; }
+  summary::-webkit-details-marker { display: none; }
+  .case-sub { font-size: 12px; color: var(--ink-muted); }
+  .banner {
+    border-radius: var(--radius); padding: 12px 15px; margin-bottom: 18px; font-size: 13px;
+    border: 1px solid var(--border); background: var(--series-soft);
+  }
+  .empty { color: var(--ink-muted); font-size: 13px; padding: 12px 0; }
+  svg { display: block; max-width: 100%; overflow: visible; }
+  .legend { display: flex; gap: 16px; font-size: 12px; color: var(--ink-2); margin-top: 10px; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Trikon</h1>
+    <div class="sub">Three-way settlement reconciliation &middot; orders <code>&harr;</code> Razorpay settlements <code>&harr;</code> bank credits</div>
+  </header>
+
+  <div class="controls">
+    <div class="field"><label for="orders">Orders</label><input id="orders" type="number" value="1000" min="1" max="20000" step="100"></div>
+    <div class="field"><label for="seed">Seed</label><input id="seed" type="number" value="42" min="0"></div>
+    <div class="field"><label for="threshold">Auto-accept</label>
+      <select id="threshold">
+        <option value="0.8">0.80</option><option value="0.9" selected>0.90</option>
+        <option value="0.95">0.95</option><option value="1">1.00</option>
+      </select>
+    </div>
+    <label class="check"><input id="clean" type="checkbox"> Clean batch (control)</label>
+    <label class="check"><input id="usellm" type="checkbox"> LLM adjudication</label>
+    <button id="go">Reconcile</button>
+    <button id="theme" class="ghost" title="Toggle theme">Theme</button>
+  </div>
+
+  <div id="status" class="banner">Loading&hellip;</div>
+
+  <nav id="tabs" role="tablist"></nav>
+
+  <section id="tab-overview"></section>
+  <section id="tab-recon" hidden></section>
+  <section id="tab-exceptions" hidden></section>
+  <section id="tab-evaluation" hidden></section>
+  <section id="tab-cash" hidden></section>
+  <section id="tab-agent" hidden></section>
+</div>
+
+<script>
+const TABS = [
+  ["overview",   "Overview"],
+  ["recon",      "Reconciliation"],
+  ["exceptions", "Exceptions"],
+  ["evaluation", "Evaluation"],
+  ["cash",       "Cash position"],
+  ["agent",      "Pipeline"],
+];
+let DATA = null;
+
+const $  = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const pct  = (x, d = 1) => (x * 100).toFixed(d) + "%";
+const num3 = (x) => Number(x).toFixed(3);
+const int  = (x) => Number(x).toLocaleString("en-IN");
+
+/* Money is never computed here — the server sends pre-formatted display strings
+   alongside integer paise, so the float hazard the Python side avoids cannot
+   reappear in JavaScript at the last moment. */
+
+function buildTabs() {
+  $("tabs").innerHTML = TABS.map(([id, label], i) =>
+    `<button role="tab" data-tab="${id}" aria-selected="${i === 0}">${label}</button>`).join("");
+  $("tabs").querySelectorAll("button").forEach((b) => b.onclick = () => selectTab(b.dataset.tab));
+}
+function selectTab(id) {
+  TABS.forEach(([t]) => $("tab-" + t).hidden = t !== id);
+  $("tabs").querySelectorAll("button").forEach((b) =>
+    b.setAttribute("aria-selected", String(b.dataset.tab === id)));
+}
+
+function tile(k, v, d, cls = "") {
+  return `<div class="tile ${cls}"><div class="k">${esc(k)}</div><div class="v">${v}</div>` +
+         (d ? `<div class="d">${d}</div>` : "") + `</div>`;
+}
+function bars(rows, fmt) {
+  const max = Math.max(...rows.map((r) => r.value), 1);
+  // A row may carry its own pre-formatted display string; otherwise fmt renders it.
+  const show = (r) => (r.display !== undefined ? r.display : fmt ? fmt(r.value) : String(r.value));
+  return rows.map((r) => `
+    <div class="barrow" title="${esc(r.label)}: ${esc(show(r))}">
+      <div class="lbl">${esc(r.label)}</div>
+      <div class="track"><div class="fill" style="width:${(r.value / max * 100).toFixed(1)}%"></div></div>
+      <div class="val">${esc(show(r))}</div>
+    </div>`).join("");
+}
+
+/* ---- Overview ---------------------------------------------------------------- */
+function renderOverview(d) {
+  const o = d.overall, e = d.exceptions, t = d.throughput;
+  const fpClean = o.false_positives === 0;
+  $("tab-overview").innerHTML = `
+    <div class="kpis">
+      ${tile("False matches", int(o.false_positives),
+             fpClean ? "none, across " + int(d.meta.record_count) + " records" : "review required", "hero")}
+      ${tile("Match rate", pct(o.match_rate), int(o.true_positives) + " of " + int(o.truth_total) + " true links")}
+      ${tile("Precision", num3(o.precision), "of links produced, share correct")}
+      ${tile("Recall", num3(o.recall), "of true links, share found")}
+      ${tile("Throughput", int(Math.round(t.records_per_second)) + "/s",
+             t.deterministic_ms.toFixed(0) + " ms deterministic")}
+    </div>
+    <div class="kpis">
+      ${tile("Straight-through", pct(o.straight_through_rate), "resolved with no human")}
+      ${tile("Human review", pct(o.human_review_rate), (e.case_count ?? 0) + " cases of " + int(d.meta.record_count))}
+      ${tile("Defects detected", pct(e.detection_recall ?? 0), (e.defects_detected ?? 0) + " of " + (e.defects_expected ?? 0) + " must-report")}
+      ${tile("False alarms", pct(e.false_alarm_rate ?? 0), (e.absorbable_false_alarms ?? 0) + " of " + (e.absorbable_total ?? 0) + " absorbable")}
+      ${tile("Exposure at risk", e.exposure_display ?? "—", "de-duplicated across cases")}
+    </div>
+    <div class="card">
+      <h2>Confidence distribution</h2>
+      <p class="note">Links by confidence band. Every band is produced by a named deterministic
+      rule, so confidence takes a few discrete values rather than a smooth spread. Bands below
+      the auto-accept threshold are escalated, never matched silently.</p>
+      ${confidenceBars(d)}
+    </div>`;
+}
+function confidenceBars(d) {
+  const byRule = {};
+  d.links.forEach((l) => {
+    byRule[l.rule] = byRule[l.rule] || { n: 0, conf: l.confidence };
+  });
+  d.links.forEach((l) => byRule[l.rule].n++);
+  const rows = Object.entries(byRule)
+    .sort((a, b) => b[1].conf - a[1].conf)
+    .map(([rule, v]) => ({ label: rule + "  (" + v.conf.toFixed(2) + ")", value: v.n }));
+  return rows.length ? bars(rows, (v) => int(v) + " links") : `<p class="empty">No links produced.</p>`;
+}
+
+/* ---- Reconciliation ---------------------------------------------------------- */
+function renderRecon(d) {
+  $("tab-recon").innerHTML = `
+    <div class="card">
+      <h2>Per-tier accuracy</h2>
+      <p class="note"><strong>Recall</strong> counts every true link, including ones the system
+      deliberately refused because a record was corrupted. <strong>Resolvable recall</strong>
+      excludes those, isolating matching skill from correct refusal. Both are reported; neither
+      is hidden.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Tier</th><th class="num">True</th><th class="num">TP</th>
+          <th class="num">FP</th><th class="num">FN</th><th class="num">Precision</th>
+          <th class="num">Recall</th><th class="num">Resolvable</th><th class="num">N:M</th>
+          <th class="num">Pruned</th></tr></thead>
+        <tbody>${d.tiers.map((t) => `<tr>
+          <td>${esc(t.tier)}</td><td class="num">${t.truth_total}</td>
+          <td class="num">${t.true_positives}</td>
+          <td class="num">${t.false_positives}</td><td class="num">${t.false_negatives}</td>
+          <td class="num">${num3(t.precision)}</td><td class="num">${num3(t.recall)}</td>
+          <td class="num">${num3(t.resolvable_recall)}</td>
+          <td class="num">${t.nm_total ? num3(t.nm_recall) : "—"}</td>
+          <td class="num">${pct(t.blocking_reduction, 2)}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </div>
+    <div class="card">
+      <h2>N:M payouts resolved by subset-sum</h2>
+      <p class="note">A consolidated bank credit equals no single settlement, so pairwise matching
+      cannot reach it. Subset-sum searches combinations in both directions and refuses whenever
+      more than one distinct subset sums to the target.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Tier</th><th class="num">Merges</th><th class="num">Splits</th>
+          <th class="num">Refused as ambiguous</th><th class="num">Candidates scored</th></tr></thead>
+        <tbody>${d.tiers.map((t) => `<tr><td>${esc(t.tier)}</td>
+          <td class="num">${t.subset_merges}</td><td class="num">${t.subset_splits}</td>
+          <td class="num">${t.subset_ambiguous}</td>
+          <td class="num">${int(t.candidates_scored)}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </div>
+    ${matchedTable(d)}`;
+}
+function matchedTable(d) {
+  const rows = d.links.slice(0, 40);
+  return `<div class="card"><h2>Matched links <span class="case-sub">(first ${rows.length} of ${int(d.links.length)})</span></h2>
+    <div class="scroll"><table>
+      <thead><tr><th>Left</th><th>Right</th><th>Rule</th><th class="num">Confidence</th><th>Accepted</th></tr></thead>
+      <tbody>${rows.map((l) => `<tr>
+        <td class="mono">${esc(l.left_id)}</td><td class="mono">${esc(l.right_id)}</td>
+        <td>${esc(l.rule)}</td><td class="num">${l.confidence.toFixed(2)}</td>
+        <td>${l.auto_accepted ? "auto" : "review" + (l.adjudicated_by ? " &middot; " + esc(l.adjudicated_by) : "")}</td>
+      </tr>`).join("")}</tbody>
+    </table></div></div>`;
+}
+
+/* ---- Exceptions -------------------------------------------------------------- */
+function renderExceptions(d) {
+  const cases = d.review_cases;
+  const body = cases.length ? cases.map((c) => `
+    <details>
+      <summary>
+        <span class="chip ${esc(c.severity)}"><span class="dot"></span>${esc(c.severity)}</span>
+        <span><strong>${esc(c.primary_code)}</strong>
+          <span class="case-sub">&nbsp;${esc(c.subject_id)}${
+            c.finding_codes.length > 1 ? " &middot; " + c.finding_codes.length + " findings" : ""}</span></span>
+        <span class="val" style="text-align:right;font-variant-numeric:tabular-nums">${esc(c.total_display)}</span>
+      </summary>
+      ${c.findings.map((f) => `
+        <div style="padding:8px 0 4px 96px">
+          <div style="font-size:12.5px">${esc(f.reason)}</div>
+          <ul class="evidence">${f.evidence.map((ev) => `
+            <li><span class="mark ${ev.supports ? "yes" : "no"}">${ev.supports ? "✓" : "✕"}</span>
+              <span><strong>${esc(ev.feature)}</strong>: ${esc(ev.observed)}${
+                ev.detail ? `<br><span class="case-sub">${esc(ev.detail)}</span>` : ""}</span></li>`).join("")}</ul>
+        </div>`).join("")}
+      <div style="padding:8px 0 2px 96px;font-size:12px"><strong>Action</strong> &middot; ${esc(c.recommended_action)}</div>
+    </details>`).join("")
+    : `<p class="empty">No exceptions. On a clean batch this is the correct result.</p>`;
+
+  $("tab-exceptions").innerHTML = `
+    <div class="card">
+      <h2>Review queue &middot; ${cases.length} cases &middot; ${esc(d.exceptions.exposure_display ?? "—")} at risk</h2>
+      <p class="note">Ordered by rupees exposed, because that is how a controller triages. Findings
+      about the same record are one case: exposure combines a principal amount by maximum and
+      fee/tax deltas by sum, so the same rupees are never counted twice.</p>
+      ${body}
+    </div>`;
+}
+
+/* ---- Evaluation -------------------------------------------------------------- */
+function renderEvaluation(d) {
+  const e = d.exceptions;
+  $("tab-evaluation").innerHTML = `
+    <div class="card">
+      <h2>Calibration</h2>
+      <p class="note">Does a stated confidence mean what it says? Each point plots observed
+      accuracy against mean stated confidence; the grey diagonal is perfect calibration.
+      Expected calibration error is <strong>${num3(d.overall.expected_calibration_error)}</strong>.</p>
+      ${calibrationChart(d.calibration)}
+    </div>
+    <div class="card">
+      <h2>Exception detection by code</h2>
+      <p class="note">Expected comes from the injected defect list, written before the run.
+      Detected counts findings raised. Matched counts defects whose expected code was raised
+      against a record it actually touched — the only column that can prove detection.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Code</th><th class="num">Expected</th><th class="num">Detected</th><th class="num">Matched</th></tr></thead>
+        <tbody>${(e.by_code ?? []).map((r) => `<tr><td>${esc(r.code)}</td>
+          <td class="num">${r.expected}</td><td class="num">${r.detected}</td>
+          <td class="num">${r.matched}</td></tr>`).join("")}</tbody>
+      </table></div>
+    </div>
+    ${errorCard(d)}`;
+}
+function calibrationChart(buckets) {
+  if (!buckets || !buckets.length) return `<p class="empty">No links to calibrate.</p>`;
+  const W = 380, H = 260, P = 42;
+  const x = (v) => P + v * (W - P - 12);
+  const y = (v) => H - P - v * (H - P - 14);
+  const ticks = [0, 0.25, 0.5, 0.75, 1];
+  return `
+  <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Calibration: observed accuracy against stated confidence">
+    ${ticks.map((t) => `<line x1="${P}" y1="${y(t)}" x2="${W - 12}" y2="${y(t)}" stroke="var(--grid)" stroke-width="1"/>
+      <text x="${P - 8}" y="${y(t) + 4}" text-anchor="end" font-size="10" fill="var(--ink-muted)">${t.toFixed(2)}</text>`).join("")}
+    ${ticks.map((t) => `<text x="${x(t)}" y="${H - P + 16}" text-anchor="middle" font-size="10" fill="var(--ink-muted)">${t.toFixed(2)}</text>`).join("")}
+    <line x1="${x(0)}" y1="${y(0)}" x2="${x(1)}" y2="${y(1)}" stroke="var(--deemph)" stroke-width="2" stroke-dasharray="4 4"/>
+    <polyline fill="none" stroke="var(--series)" stroke-width="2"
+      points="${buckets.map((b) => `${x(b.mean_confidence)},${y(b.accuracy)}`).join(" ")}"/>
+    ${buckets.map((b) => `<circle cx="${x(b.mean_confidence)}" cy="${y(b.accuracy)}" r="5"
+        fill="var(--series)" stroke="var(--surface)" stroke-width="2"><title>stated ${b.mean_confidence.toFixed(3)}, observed ${b.accuracy.toFixed(3)}, n=${b.count}</title></circle>
+      <text x="${x(b.mean_confidence)}" y="${y(b.accuracy) - 12}" text-anchor="middle" font-size="10" fill="var(--ink-2)">n=${b.count}</text>`).join("")}
+    <line x1="${P}" y1="${y(0)}" x2="${W - 12}" y2="${y(0)}" stroke="var(--axis)" stroke-width="1"/>
+    <line x1="${P}" y1="${y(0)}" x2="${P}" y2="${y(1)}" stroke="var(--axis)" stroke-width="1"/>
+    <text x="${P}" y="14" font-size="10" fill="var(--ink-muted)">observed accuracy</text>
+    <text x="${W - 12}" y="${H - 6}" text-anchor="end" font-size="10" fill="var(--ink-muted)">stated confidence</text>
+  </svg>
+  <div class="legend">
+    <span><span class="swatch" style="background:var(--series)"></span>observed</span>
+    <span><span class="swatch" style="background:var(--deemph)"></span>perfect calibration</span>
+  </div>`;
+}
+function errorCard(d) {
+  const fp = d.tiers.flatMap((t) => t.false_positive_pairs.map((p) => [t.tier, p, "false match"]));
+  const fn = d.tiers.flatMap((t) => t.false_negative_pairs.map((p) => [t.tier, p, "not matched"]));
+  const rows = [...fp, ...fn];
+  return `<div class="card"><h2>Error analysis</h2>
+    <p class="note">Every link the system got wrong, listed. A <em>not matched</em> row is often a
+    correct refusal — a record whose amount was corrupted, which the system paired for diagnosis
+    but declined to reconcile.</p>
+    ${rows.length ? `<div class="scroll"><table>
+      <thead><tr><th>Kind</th><th>Tier</th><th>Left</th><th>Right</th></tr></thead>
+      <tbody>${rows.map(([tier, pair, kind]) => `<tr><td>${esc(kind)}</td><td>${esc(tier)}</td>
+        <td class="mono">${esc(pair[0])}</td><td class="mono">${esc(pair[1])}</td></tr>`).join("")}</tbody>
+    </table></div>` : `<p class="empty">No errors of either kind.</p>`}</div>`;
+}
+
+/* ---- Cash position ----------------------------------------------------------- */
+function renderCash(d) {
+  const c = d.cash_position;
+  if (!c || !c.by_day) { $("tab-cash").innerHTML = `<p class="empty">No cash data.</p>`; return; }
+  $("tab-cash").innerHTML = `
+    <div class="kpis">
+      ${tile("In flight", c.total_in_flight_display, c.unsettled_row_count + " unsettled rows")}
+      ${tile("Withheld under dispute", c.on_hold_display, "released when disputes close")}
+      ${tile("Stuck in failed settlements", c.failed_display, "needs re-initiation")}
+    </div>
+    <div class="card">
+      <h2>Expected inflow by settlement date</h2>
+      <p class="note">Arithmetic over rows that have not settled, attributed to their expected
+      date under the T+2 working-day rule — so nothing is projected onto a day the banks are shut.
+      This is not a forecast model: on synthetic data that would predict a process we wrote.</p>
+      ${bars(c.by_day.map((r) => ({ label: r.day, value: r.amount_paise, display: r.amount_display })))}
+    </div>`;
+}
+
+/* ---- Pipeline ---------------------------------------------------------------- */
+function renderAgent(d) {
+  const t = d.throughput, m = d.meta;
+  const stages = Object.entries(t.stage_ms || {}).sort((a, b) => b[1] - a[1]);
+  $("tab-agent").innerHTML = `
+    <div class="kpis">
+      ${tile("LLM", esc(m.llm ?? "disabled"), m.adjudicated + " cases adjudicated")}
+      ${tile("Escalated to human", int(m.escalated), "left unresolved, deliberately")}
+      ${tile("Defects injected", int(m.defects_injected ?? 0), "recorded before the run")}
+      ${tile("Rollovers simulated", int(m.rollovers_simulated ?? 0), "partial settlements")}
+    </div>
+    <div class="card">
+      <h2>Stage timings</h2>
+      <p class="note">Deterministic stages only total ${t.deterministic_ms.toFixed(0)} ms.
+      Adjudication latency (${t.adjudication_ms.toFixed(0)} ms) is reported separately and excluded
+      from throughput, because bundling network time to a rate-limited free-tier model would
+      describe that provider's queue rather than this system.</p>
+      ${stages.length ? bars(stages.map(([k, v]) => ({ label: k, value: v })), (v) => v.toFixed(0) + " ms")
+                      : `<p class="empty">No timings.</p>`}
+    </div>
+    <div class="card">
+      <h2>Where the LLM is allowed to act</h2>
+      <p class="note">Deterministic rules resolve everything they can prove. Only genuinely
+      ambiguous candidates reach a model, and a model decision is clamped to its rule's confidence
+      ceiling — always below the auto-accept threshold. No model output can produce an
+      auto-accepted match; adjudicated links stay flagged for review.</p>
+      <div class="scroll"><table>
+        <thead><tr><th>Rule</th><th class="num">Ceiling</th><th>Path</th></tr></thead>
+        <tbody>
+          <tr><td>R1_EXACT</td><td class="num">1.00</td><td>deterministic &middot; auto-accept</td></tr>
+          <tr><td>R2_FEE_EXPLAINED</td><td class="num">0.99</td><td>deterministic &middot; auto-accept</td></tr>
+          <tr><td>R5_SUBSET_SUM</td><td class="num">0.95</td><td>deterministic &middot; auto-accept</td></tr>
+          <tr><td>R3_TIMING_SHIFTED</td><td class="num">0.92</td><td>deterministic &middot; auto-accept + breach raised</td></tr>
+          <tr><td>R4_UNIQUE_AMOUNT</td><td class="num">0.90</td><td>deterministic &middot; auto-accept if unique</td></tr>
+          <tr><td>R6_FUZZY_REF</td><td class="num">0.70</td><td>LLM may adjudicate &middot; review only</td></tr>
+          <tr><td>R7_AMBIGUOUS</td><td class="num">0.50</td><td>LLM may adjudicate &middot; review only</td></tr>
+          <tr><td>R8_NO_MATCH</td><td class="num">0.00</td><td>exception</td></tr>
+        </tbody>
+      </table></div>
+    </div>`;
+}
+
+/* ---- Wiring ------------------------------------------------------------------ */
+async function reconcile() {
+  const btn = $("go");
+  btn.disabled = true;
+  $("status").textContent = "Reconciling…";
+  try {
+    const res = await fetch("/api/reconcile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        seed: +$("seed").value,
+        orders: +$("orders").value,
+        clean: $("clean").checked,
+        threshold: +$("threshold").value,
+        use_llm: $("usellm").checked,
+      }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status + " " + (await res.text()).slice(0, 200));
+    DATA = await res.json();
+    renderOverview(DATA); renderRecon(DATA); renderExceptions(DATA);
+    renderEvaluation(DATA); renderCash(DATA); renderAgent(DATA);
+    const m = DATA.meta;
+    $("status").innerHTML = `<strong>${int(m.record_count)} records</strong> reconciled in
+      ${DATA.throughput.deterministic_ms.toFixed(0)} ms &middot; seed ${m.seed} &middot;
+      ${m.clean ? "clean control batch" : int(m.defects_injected) + " defects injected"} &middot;
+      LLM ${esc(m.llm)}`;
+  } catch (err) {
+    $("status").innerHTML = `<strong>Failed.</strong> ${esc(err.message)}`;
+  } finally {
+    btn.disabled = false;
+  }
+}
+$("go").onclick = reconcile;
+$("theme").onclick = () => {
+  const dark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.setAttribute("data-theme", dark ? "light" : "dark");
+};
+buildTabs();
+reconcile();
+</script>

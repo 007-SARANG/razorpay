@@ -1,0 +1,24 @@
+# Secrets -- never commit
+.env
+*.key
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Node / web
+web/node_modules/
+web/dist/
+
+# Generated artefacts.
+# NOTE: data/cache/ is deliberately NOT ignored -- committed LLM response caches are
+# what let a reviewer reproduce our reported metrics without an API key.
+data/batches/
+data/reports/
+*.db
+*.sqlite3
