@@ -244,14 +244,21 @@ Dashboard → **Evaluation** tab.
 Official Track 04 deliverables are exactly three: **a public repo, a 5-minute pitch video,
 and the architecture.**
 
-- [ ] **Public repo** — `git init` isn't done yet; initialise, commit, push public
-- [ ] **Architecture** — `ARCHITECTURE.md` ✅
+- [x] **Public repo** — <https://github.com/007-SARANG/razorpay> (public, 34 files, no secrets)
+- [x] **Architecture** — `ARCHITECTURE.md` ✅
 - [ ] **5-minute video** — script above; record with dashboard + terminal
 - [ ] `README.md` with reproducible numbers ✅
 - [ ] Tests pass (`make test` → 52) ✅
 - [ ] Runs with **no API key** ✅
 - [ ] No hardcoded secrets — `.env` gitignored, `.env.example` committed ✅
-- [ ] `data/cache/` committed so metrics reproduce offline (if you run with `--llm`)
+- [ ] `data/cache/` committed so metrics reproduce offline (only if you get `--llm` working)
+
+**Provider status (be accurate about this if asked):** AgentRouter returns
+`unauthorized_client_error` on every endpoint including `GET /v1/models`, so it gates
+free-quota access to recognised coding-tool clients rather than to arbitrary API callers.
+The LLM path is therefore exercised only against simulated adjudicators. The safety fences
+are fully tested; the provider *transport* is not. Every published metric comes from the
+deterministic path, so nothing in the results depends on this being resolved.
 - [ ] Apply via the form: <https://forms.gle/d9r2gvxp8cmoZhon9>
 - [ ] **Deadline: 5 September 2026**
 
