@@ -22,3 +22,6 @@ data/batches/
 data/reports/
 *.db
 *.sqlite3
+
+# Pitch prep — kept locally, not published
+DEMO.md
