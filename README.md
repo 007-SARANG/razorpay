@@ -78,7 +78,7 @@ make dashboard          # or: .venv/bin/python -m uvicorn api.main:app --port 80
 | `trikon run --orders 1000` | Reconcile and print the full report. `--exceptions N`, `--cash`, `--json-out`. |
 | `trikon stress --sizes 120 1000 10000` | Accuracy and throughput across batch sizes. |
 | `trikon sweep` | Vary the auto-accept threshold; show the precision/recall/review tradeoff. |
-| `make test` | 52 tests, including the adversarial refusal cases. |
+| `make test` | 69 tests, including the adversarial refusal cases. |
 
 ## How it works
 
@@ -256,6 +256,34 @@ confidence:
 4. A response citing an unknown case id or evidence feature is discarded entirely.
 5. Any failure — bad JSON, timeout, exhausted budget — escalates to human review.
 
+### The wire path is verified, not assumed
+
+`tests/test_llm_transport.py` runs the real `LLMProvider` against a local
+OpenAI-compatible stub server over an actual socket — no mocked transport. It asserts, on
+every run:
+
+| Behaviour | Verified |
+|---|---|
+| Bearer auth, correct model, `temperature=0`, JSON schema sent | ✅ |
+| An HTTP `MATCH` becomes a **review-flagged, never auto-accepted** link | ✅ |
+| JSON salvaged from markdown fences, prose wrappers, padding | ✅ (5 shapes) |
+| Unparseable output → escalate | ✅ |
+| Fabricated `case_id` arriving over the wire → whole response discarded | ✅ |
+| `429` retried, honouring `Retry-After` | ✅ |
+| `5xx` → falls through to the fallback model | ✅ |
+| `400` → no retry burn, move on | ✅ |
+| **`401` → escalates; deterministic results untouched** | ✅ |
+| Budget cap stops calls mid-batch, result stays honest | ✅ |
+| Cache prevents a second HTTP call entirely | ✅ |
+
+A stub is deliberately preferred over a one-off live call: a single successful request to a
+third-party proxy proves nothing repeatable and stops proving anything the moment that
+provider rate-limits or disappears. These tests exercise every branch, in CI, with no key.
+
+**What this does not claim:** nothing here measures how *well* a given model adjudicates.
+That needs a live model and a labelled set, and is listed as future work in
+[ARCHITECTURE.md](ARCHITECTURE.md) §8.
+
 ## Project layout
 
 ```
@@ -275,7 +303,7 @@ trikon/
   llm/              provider, disk cache, bounded adjudicator
 api/main.py         FastAPI: /api/reconcile, /api/config, serves the dashboard
 web/index.html      dashboard, single self-contained file, no build step
-tests/              52 tests
+tests/              69 tests
 ```
 
 ## Limitations
@@ -297,6 +325,10 @@ Stated plainly, because a limitation found by a reviewer costs more than one you
   its data contract is asserted, but there is no browser in the build environment.
 - **Free-tier models are weaker adjudicators** than frontier models. The design makes this
   safe rather than invisible: a weak model produces more escalations, never a wrong match.
+- **Adjudication quality is unmeasured.** The transport path is fully tested and the safety
+  fences are proven, but no live model has been scored on a labelled set of ambiguous cases.
+  Every metric in this README comes from the deterministic path, so none of them depend on
+  a model's judgement.
 
 ## Licence
 

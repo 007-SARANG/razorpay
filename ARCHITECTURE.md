@@ -241,6 +241,17 @@ Responses are cached on disk by evidence hash. This is a reproducibility mechani
 speed optimisation: it makes reported metrics checkable, the demo offline-safe, and the
 submission survivable if the provider disappears before the deadline.
 
+**Transport is verified against a local stub, not a live provider.**
+`tests/test_llm_transport.py` runs the real client over a real socket against an
+OpenAI-compatible stub whose behaviour each test scripts — covering bearer auth, JSON
+salvage from markdown-fenced and prose-wrapped output, `429` retry honouring `Retry-After`,
+`5xx` fallback to the next model, `400` without retry burn, `401` degrading to escalation
+with the deterministic results untouched, the budget cap, and the cache suppressing a second
+call. A stub is the stronger choice: one successful live request proves nothing repeatable
+and stops proving anything the moment the provider changes. The gap this leaves is
+deliberate and stated — adjudication *quality* is unmeasured, since scoring it needs a live
+model and a labelled set (§8).
+
 ### 4.9 Evaluation — `evaluate.py`
 
 Ground truth is loaded **here and nowhere else**.
